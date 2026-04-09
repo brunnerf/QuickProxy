@@ -32,6 +32,12 @@ sudo installer -pkg session-manager-plugin.pkg -target /
 rm session-manager-plugin.pkg
 ```
 
+The installer places the binary in `/usr/local/sessionmanagerplugin/bin/` which is not on the default PATH. Create a symlink so it's accessible system-wide:
+
+```bash
+sudo ln -s /usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/session-manager-plugin
+```
+
 Verify: `session-manager-plugin --version`
 
 ### Terraform

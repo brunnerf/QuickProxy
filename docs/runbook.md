@@ -25,6 +25,9 @@ rm session-manager-plugin.pkg
 # sudo installer -pkg session-manager-plugin.pkg -target /
 # rm session-manager-plugin.pkg
 
+# Add to PATH (required on both architectures):
+sudo ln -s /usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/session-manager-plugin
+
 # Static analysis (optional but recommended)
 brew install tflint
 brew install checkov
