@@ -7,5 +7,6 @@
 backend.hcl
 .DS_Store
 _bmad-output/
+_bmad/
 .claude/
 *.pkg
