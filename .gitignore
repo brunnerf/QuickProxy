@@ -1,0 +1,11 @@
+.terraform/
+*.tfvars
+!terraform.tfvars.example
+.env
+*.pem
+*.key
+backend.hcl
+.DS_Store
+_bmad-output/
+.claude/
+*.pkg

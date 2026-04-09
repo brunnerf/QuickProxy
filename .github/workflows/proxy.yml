@@ -1,0 +1,57 @@
+name: Proxy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+          - status
+
+permissions:
+  id-token: write   # required for OIDC token exchange
+  contents: read
+
+jobs:
+  proxy:
+    name: ${{ github.event.inputs.action }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Start proxy
+        if: github.event.inputs.action == 'start'
+        run: |
+          aws ec2 start-instances --instance-ids ${{ secrets.INSTANCE_ID }}
+          echo "Proxy instance starting. Run 'status' to check when it's ready."
+
+      - name: Stop proxy
+        if: github.event.inputs.action == 'stop'
+        run: |
+          aws ec2 stop-instances --instance-ids ${{ secrets.INSTANCE_ID }}
+          echo "Proxy instance stopping."
+
+      - name: Status
+        if: github.event.inputs.action == 'status'
+        run: |
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids ${{ secrets.INSTANCE_ID }} \
+            --query 'Reservations[0].Instances[0].State.Name' \
+            --output text)
+
+          IP=$(aws ec2 describe-instances \
+            --instance-ids ${{ secrets.INSTANCE_ID }} \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+
+          echo "State: ${STATE}"
+          echo "IP:    $([[ "${IP}" == "None" || -z "${IP}" ]] && echo "N/A" || echo "${IP}")"

@@ -1,0 +1,27 @@
+# terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit real values.
+
+# AWS region to deploy the proxy instance into.
+# Choose a region close to the geolocation you want to appear from.
+# Example: "eu-west-1" (Ireland), "us-east-1" (N. Virginia)
+aws_region = "eu-west-1"
+
+# CIDR block for the VPC. The public subnet is derived automatically as the first /24.
+vpc_cidr = "10.0.0.0/16"
+
+# GitHub repository in "owner/repo" format — scopes the OIDC trust policy to this repo only.
+github_repo = "brunnerf/QuickProxy"
+
+# EC2 instance type. t3.micro is AWS free-tier eligible.
+instance_type = "t3.micro"
+
+# Public SSH keys for each machine that needs proxy access.
+# Generate with: ssh-keygen -t ed25519 -f ~/.ssh/proxy_key -C "machine-name"
+# Add one entry per machine — never share private keys across machines.
+# SSM provides the transport tunnel (using AWS credentials);
+# these SSH keys authenticate the inner SSH session for the ssh -D tunnel.
+additional_public_keys = [
+  "ssh-ed25519 AAAA...key1... home-mac",
+  "ssh-ed25519 AAAA...key2... work-mac",
+]
