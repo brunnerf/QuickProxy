@@ -8,6 +8,7 @@ chown -R ec2-user:ec2-user /home/ec2-user/.ssh
 echo "${key}" >> /home/ec2-user/.ssh/authorized_keys
 %{ endfor ~}
 
-# Ensure SSM agent is enabled and running
+# Install, enable and start SSM agent (not pre-installed on AL2023.11+)
+dnf install -y amazon-ssm-agent
 systemctl enable amazon-ssm-agent
 systemctl start amazon-ssm-agent
