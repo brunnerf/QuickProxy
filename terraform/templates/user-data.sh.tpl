@@ -7,3 +7,7 @@ chown -R ec2-user:ec2-user /home/ec2-user/.ssh
 %{ for key in additional_public_keys ~}
 echo "${key}" >> /home/ec2-user/.ssh/authorized_keys
 %{ endfor ~}
+
+# Ensure SSM agent is enabled and running
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
