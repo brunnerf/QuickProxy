@@ -1,10 +1,10 @@
-# Local Mac Setup
+# Local Mac Setup — Client Connectivity
 
-This document covers the prerequisites and local test commands for working with this repository on macOS.
+Everything needed on a client Mac to connect to the QuickProxy SOCKS proxy. No Terraform or admin AWS credentials required.
+
+---
 
 ## Prerequisites
-
-Install all tools before working with this repository:
 
 ### AWS CLI
 
@@ -18,8 +18,6 @@ Verify: `aws --version`
 
 Required for SSM-based SSH tunnelling (the SOCKS proxy transport).
 
-Install using the official AWS package (recommended — brew cask is deprecated):
-
 ```bash
 # Apple Silicon (M1/M2/M3)
 curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac_arm64/session-manager-plugin.pkg" -o session-manager-plugin.pkg
@@ -32,7 +30,7 @@ sudo installer -pkg session-manager-plugin.pkg -target /
 rm session-manager-plugin.pkg
 ```
 
-The installer places the binary in `/usr/local/sessionmanagerplugin/bin/` which is not on the default PATH. Create a symlink so it's accessible system-wide:
+The installer places the binary outside the default PATH. Create a symlink:
 
 ```bash
 sudo ln -s /usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/session-manager-plugin
@@ -40,105 +38,61 @@ sudo ln -s /usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local
 
 Verify: `session-manager-plugin --version`
 
-### Terraform
+### SSH key
 
-```bash
-brew install terraform
-```
-
-Verify: `terraform version`
-
-### tflint
-
-```bash
-brew install tflint
-```
-
-After installing, download the AWS ruleset plugin (one-time, per machine):
-
-```bash
-tflint --init --chdir=terraform/
-```
-
-### checkov
-
-```bash
-brew install checkov
-```
-
-## Local Testing
-
-Run these three checks from the **repo root** before pushing, in this order:
-
-### 1. Formatting check
-
-```bash
-terraform fmt -check terraform/
-```
-
-Verifies all `.tf` files are formatted according to the Terraform style conventions. Fix with `terraform fmt terraform/` if it reports any files.
-
-### 2. Linting
-
-```bash
-tflint --chdir=terraform/
-```
-
-Checks for AWS-specific best practices and deprecated configurations using the tflint AWS ruleset plugin.
-
-### 3. Security scan
-
-```bash
-checkov -d terraform/
-```
-
-Scans all `.tf` files for security misconfigurations (e.g. open security groups, unencrypted storage). Review any reported findings — not all checks are blockers for this project.
-
-## AWS Credentials (local apply)
-
-For local `terraform apply` you need AWS credentials configured. Use AWS SSO if available:
-
-```bash
-aws configure sso       # one-time setup
-aws sso login --profile <profile-name>
-export AWS_PROFILE=<profile-name>
-```
-
-Or configure static credentials (not recommended for long-term use):
-
-```bash
-aws configure
-```
-
-## Backend Initialisation
-
-`backend.hcl` is gitignored and must be created locally before running `terraform init`. See the architecture doc for the required format. Then from the `terraform/` directory:
-
-```bash
-terraform init -backend-config=../backend.hcl
-```
+Your SSH public key must be registered with the proxy instance before you can connect. If you are the admin setting up the first machine, this is handled during bootstrap. For a second machine, see [ssh-key-setup.md](ssh-key-setup.md).
 
 ---
 
-## SSH config for SSM transport
+## AWS Profile Setup
+
+Client machines authenticate via a dedicated IAM user (`quickproxy-base`) whose only permission is to assume the `quickproxy-client-role`. All actual proxy operations run under that role using short-lived credentials.
+
+You need the `AccessKeyId` and `SecretAccessKey` from the admin (created in the runbook at Step 6), and the `client_role_arn` from the Terraform output.
+
+Add these two profiles to `~/.aws/config`:
+
+```ini
+[profile quickproxy-base]
+aws_access_key_id     = <AccessKeyId>
+aws_secret_access_key = <SecretAccessKey>
+region                = eu-west-1
+
+[profile quickproxy-client]
+role_arn       = <client_role_arn>
+source_profile = quickproxy-base
+region         = eu-west-1
+```
+
+Verify the setup:
+
+```bash
+aws sts get-caller-identity --profile quickproxy-client
+```
+
+Expected output shows the assumed role ARN, not the base user.
+
+---
+
+## SSH Config for SSM Transport
 
 Add this block to `~/.ssh/config`:
 
 ```
-Host i-*
+Host i-* mi-*
   User ec2-user
   IdentityFile ~/.ssh/quickproxy_key
-  ProxyCommand aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p
+  ProxyCommand aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p --profile quickproxy-client
   StrictHostKeyChecking no
 ```
 
-This routes any SSH connection to an instance ID (`i-*`) through the SSM tunnel. No open ports on the EC2 instance are required.
+This routes any SSH connection to an instance ID (`i-*`) through the SSM tunnel using the client profile. No open ports on the EC2 instance are required.
 
 ---
 
-## Starting the SOCKS proxy
+## Starting the SOCKS Proxy
 
-Add this alias to your `~/.zshrc` or `~/.bashrc`:
+Add this to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
 export PROXY_INSTANCE_ID="i-0abc1234def567890"  # replace with your instance ID
@@ -157,7 +111,7 @@ To start the proxy:
 
 ---
 
-## macOS SOCKS proxy configuration
+## macOS SOCKS Proxy Configuration
 
 **System Settings → Network → select active connection (Wi-Fi or Ethernet) → Details → Proxies → SOCKS Proxy**
 
@@ -171,11 +125,11 @@ Click OK and Apply. Chrome and Safari use the macOS system proxy automatically �
 
 ## Verification
 
-Visit `https://whatismyipaddress.com/` — the IP should match the instance's public IP from the `status` job (see [docs/ip-discovery.md](ip-discovery.md)).
+Visit `https://whatismyipaddress.com/` — the IP should match the instance's public IP from the `status` job (see [ip-discovery.md](ip-discovery.md)).
 
 ---
 
-## Deactivating the proxy
+## Deactivating the Proxy
 
 1. Uncheck **SOCKS Proxy** in System Settings → Network → Details → Proxies
 2. Kill the background SSH tunnel:

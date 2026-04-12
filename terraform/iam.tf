@@ -80,6 +80,114 @@ resource "aws_iam_role_policy" "github_s3_state" {
 }
 
 # ---------------------------------------------------------------------------
+# Client role — assumed by proxy users for SSM tunnel + SSH; no infra access
+# ---------------------------------------------------------------------------
+
+data "aws_iam_policy_document" "client_assume" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_user.base.arn]
+    }
+  }
+}
+
+resource "aws_iam_role" "client" {
+  name               = "quickproxy-client-role"
+  assume_role_policy = data.aws_iam_policy_document.client_assume.json
+  tags               = merge(local.common_tags, { Name = "quickproxy-client-role" })
+}
+
+data "aws_iam_policy_document" "client_permissions" {
+  # Start SSM sessions only on instances tagged Project=QuickProxy
+  statement {
+    sid     = "SSMStartSession"
+    effect  = "Allow"
+    actions = ["ssm:StartSession"]
+    resources = [
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*",
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:resourceTag/Project"
+      values   = ["QuickProxy"]
+    }
+  }
+
+  # Manage own SSM sessions
+  statement {
+    sid    = "SSMManageSessions"
+    effect = "Allow"
+    actions = [
+      "ssm:TerminateSession",
+      "ssm:ResumeSession",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:session/*",
+    ]
+  }
+
+  # Describe actions don't support resource-level restrictions
+  statement {
+    sid    = "SSMDescribe"
+    effect = "Allow"
+    actions = [
+      "ssm:DescribeSessions",
+      "ssm:GetConnectionStatus",
+      "ssm:DescribeInstanceInformation",
+    ]
+    resources = ["*"]
+  }
+
+  # Resolve instance ID by tag (e.g. in shell scripts)
+  statement {
+    sid       = "EC2Describe"
+    effect    = "Allow"
+    actions   = ["ec2:DescribeInstances"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "client_permissions" {
+  name   = "quickproxy-client-permissions"
+  role   = aws_iam_role.client.name
+  policy = data.aws_iam_policy_document.client_permissions.json
+}
+
+# ---------------------------------------------------------------------------
+# Base IAM user — only credential stored on client machines; its sole
+# permission is sts:AssumeRole on the client role above.
+#
+# After first apply, create the access key manually (keeps the secret out of
+# Terraform state):
+#   aws iam create-access-key --user-name quickproxy-base
+# ---------------------------------------------------------------------------
+
+resource "aws_iam_user" "base" {
+  # checkov:skip=CKV_AWS_40: inline policy intentional — this user only does sts:AssumeRole; attaching to a group adds no value here
+  name = "quickproxy-base"
+  tags = merge(local.common_tags, { Name = "quickproxy-base" })
+}
+
+data "aws_iam_policy_document" "base_assume_client" {
+  statement {
+    sid       = "AssumeClientRole"
+    effect    = "Allow"
+    actions   = ["sts:AssumeRole"]
+    resources = [aws_iam_role.client.arn]
+  }
+}
+
+resource "aws_iam_user_policy" "base_assume_client" {
+  name   = "assume-quickproxy-client-role"
+  user   = aws_iam_user.base.name
+  policy = data.aws_iam_policy_document.base_assume_client.json
+}
+
+# ---------------------------------------------------------------------------
 # EC2 instance role — assumed by the EC2 instance for SSM access
 # ---------------------------------------------------------------------------
 

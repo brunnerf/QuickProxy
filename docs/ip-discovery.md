@@ -18,7 +18,8 @@ IP:    1.2.3.4
 aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=proxy-ec2" \
   --query 'Reservations[0].Instances[0].PublicIpAddress' \
-  --output text
+  --output text \
+  --profile quickproxy-client
 ```
 
 Returns the current public IP, or `None` if the instance is stopped.

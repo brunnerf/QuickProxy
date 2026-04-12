@@ -15,14 +15,18 @@ Mac → AWS SSM tunnel → EC2 instance → internet
 
 - **No long-lived AWS credentials** — GitHub Actions authenticates via OIDC
 - **No open inbound ports** — SSM Session Manager provides the transport
+- **Least-privilege client access** — proxy users assume a dedicated IAM role with SSM-only permissions; no infra access
 - **Free tier** — t3.micro, no Elastic IP
 - **Portable** — fully reproducible on a new AWS account via bootstrap script
 
 ## Quick Start
 
+**Admin (bootstrap & infrastructure):**
 1. [First-time setup & account rotation](docs/runbook.md)
 2. [SSH key generation & multi-machine access](docs/ssh-key-setup.md)
-3. [Local Mac setup — SSH config, SOCKS proxy, shell aliases](docs/local-mac-setup.md)
+
+**Client (connecting to the proxy):**
+3. [Local Mac setup — AWS profile, SSH config, SOCKS proxy](docs/local-mac-setup.md)
 4. [Finding the instance IP after start](docs/ip-discovery.md)
 
 ## Repository structure
@@ -37,7 +41,7 @@ terraform/
   outputs.tf        # instance ID, public IP, role ARN
   network.tf        # VPC, subnet, IGW, route table, security group
   ec2.tf            # EC2 instance with SSM and multi-key SSH support
-  iam.tf            # GitHub OIDC provider, pipeline role, EC2 instance profile
+  iam.tf            # GitHub OIDC role, client role + base user, EC2 instance profile
   templates/
     user-data.sh.tpl  # SSH key injection at instance launch
 scripts/

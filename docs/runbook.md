@@ -131,7 +131,27 @@ After apply completes, get the instance ID from the pipeline output (`instance_i
 
 ---
 
-## Step 6 — Configure local Mac
+## Step 6 — Create client access key
+
+Terraform creates the `quickproxy-base` IAM user but intentionally does not create the access key (to keep the secret out of Terraform state). Run this once, using whatever credentials you used for bootstrap:
+
+```bash
+aws iam create-access-key --user-name quickproxy-base
+```
+
+Note the `AccessKeyId` and `SecretAccessKey` from the output — AWS will not show the secret again.
+
+Get the client role ARN from the Terraform output:
+```bash
+cd terraform
+terraform output client_role_arn
+```
+
+Share both values with anyone who needs client access to the proxy. Each client machine configures its own `~/.aws/config` — see [docs/local-mac-setup.md](local-mac-setup.md#aws-profile-setup-proxy-client).
+
+---
+
+## Step 7 — Configure local Mac
 
 See [docs/local-mac-setup.md](local-mac-setup.md) for full instructions covering:
 - SSH config for SSM transport
@@ -140,7 +160,7 @@ See [docs/local-mac-setup.md](local-mac-setup.md) for full instructions covering
 
 ---
 
-## Step 7 — Verify
+## Step 8 — Verify
 
 1. Trigger **Actions → Proxy → Run workflow** → `start`
 2. Wait ~30 seconds, then trigger → `status` — note the public IP
