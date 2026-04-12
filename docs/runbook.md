@@ -98,18 +98,16 @@ Add these secrets:
 
 ---
 
-## Step 4 — Initialize Terraform locally (one time only)
+## Step 4 — Commit provider lock files (optional but recommended)
 
-Run `terraform init` in each root to generate lock files. From the repo root:
+The pipeline initialises Terraform itself on every run, so **this step is not required** for the pipeline to work. However, committing lock files pins provider versions so CI never silently upgrades them.
+
+From the repo root:
 
 ```bash
 for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1; do
   terraform -chdir=$dir init -backend=false -input=false
 done
-```
-
-Commit the generated lock files:
-```bash
 git add terraform/global/.terraform.lock.hcl \
         terraform/eu-central-1/.terraform.lock.hcl \
         terraform/eu-west-2/.terraform.lock.hcl \
@@ -117,6 +115,8 @@ git add terraform/global/.terraform.lock.hcl \
 git commit -m "chore: add terraform lock files for all roots"
 git push
 ```
+
+Skip this and go straight to Step 5 if you just want to get the proxy running.
 
 ---
 
