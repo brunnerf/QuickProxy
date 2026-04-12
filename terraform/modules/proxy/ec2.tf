@@ -30,6 +30,11 @@ resource "aws_instance" "proxy" {
     http_tokens = "required"
   }
 
+  root_block_device {
+    volume_size = 8    # minimum for AL2023; a SOCKS proxy needs no extra storage
+    volume_type = "gp3"
+  }
+
   user_data = templatefile("${path.module}/templates/user-data.sh.tpl", {
     additional_public_keys = var.additional_public_keys
   })
