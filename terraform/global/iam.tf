@@ -181,8 +181,9 @@ resource "aws_iam_role_policy" "client_permissions" {
 
 resource "aws_iam_user" "base" {
   # checkov:skip=CKV_AWS_273: SSO is not justified for a single-owner personal project; this user is a minimal service account
-  name = "quickproxy-base"
-  tags = merge(local.common_tags, { Name = "quickproxy-base" })
+  name          = "quickproxy-base"
+  force_destroy = true
+  tags          = merge(local.common_tags, { Name = "quickproxy-base" })
 }
 
 data "aws_iam_policy_document" "base_assume_client" {
