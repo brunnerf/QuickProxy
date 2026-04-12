@@ -105,7 +105,10 @@ Add this to `~/.zshrc` or `~/.bashrc`:
 ```bash
 export PROXY_INSTANCE_ID="i-0abc1234def567890"  # replace with your instance ID
 alias proxy-connect='ssh -D 1080 -N -f $PROXY_INSTANCE_ID'
+alias proxy-connect-lan='ssh -D 0.0.0.0:1080 -N -f $PROXY_INSTANCE_ID'
 ```
+
+`proxy-connect` binds to `localhost:1080` only. Use `proxy-connect-lan` to also expose the proxy to other devices on the same network — point them at `<this-machine-ip>:1080` as their SOCKS5 proxy.
 
 Reload your shell:
 ```bash
@@ -115,7 +118,7 @@ source ~/.zshrc
 To start the proxy:
 1. Start the EC2 instance: **Actions → Proxy → Run workflow** → `start`
 2. Wait ~30 seconds
-3. Run `proxy-connect` — the command returns immediately, tunnel runs in the background on `localhost:1080`
+3. Run `proxy-connect` or `proxy-connect-lan` — the command returns immediately, tunnel runs in the background on port `1080`
 
 ---
 
