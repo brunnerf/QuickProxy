@@ -93,7 +93,7 @@ Add these secrets:
 | `ROLE_ARN` | `arn:aws:iam::<account-id>:role/github-oidc-role` | Bootstrap script output |
 | `STATE_BUCKET` | `terraform-state-<account-id>` | Bootstrap script output |
 | `STATE_BUCKET_REGION` | `eu-west-1` | Region where the S3 state bucket was created |
-| `GITHUB_REPO` | `brunnerf/QuickProxy` | Your GitHub repository in owner/repo format |
+| `QUICKPROXY_GITHUB_REPO` | `brunnerf/QuickProxy` | Your GitHub repository in owner/repo format |
 | `ADDITIONAL_PUBLIC_KEYS` | `["ssh-ed25519 AAAA... quickproxy-mac"]` | Output of `cat ~/.ssh/quickproxy_key.pub` wrapped in `["..."]` |
 
 ---

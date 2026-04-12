@@ -130,7 +130,7 @@ jobs:
         run: terraform plan -input=false
         working-directory: terraform/${{ inputs.region || 'global' }}
         env:
-          TF_VAR_github_repo: ${{ secrets.GITHUB_REPO }}
+          TF_VAR_github_repo: ${{ secrets.QUICKPROXY_GITHUB_REPO }}
           TF_VAR_additional_public_keys: ${{ secrets.ADDITIONAL_PUBLIC_KEYS }}
 
   # ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ jobs:
           terraform apply -auto-approve -input=false $REPLACE_FLAG
         working-directory: terraform/${{ inputs.region }}
         env:
-          TF_VAR_github_repo: ${{ secrets.GITHUB_REPO }}
+          TF_VAR_github_repo: ${{ secrets.QUICKPROXY_GITHUB_REPO }}
           TF_VAR_additional_public_keys: ${{ secrets.ADDITIONAL_PUBLIC_KEYS }}
 
   # ---------------------------------------------------------------------------
@@ -218,5 +218,5 @@ jobs:
         run: terraform destroy -auto-approve -input=false
         working-directory: terraform/${{ inputs.region }}
         env:
-          TF_VAR_github_repo: ${{ secrets.GITHUB_REPO }}
+          TF_VAR_github_repo: ${{ secrets.QUICKPROXY_GITHUB_REPO }}
           TF_VAR_additional_public_keys: ${{ secrets.ADDITIONAL_PUBLIC_KEYS }}
