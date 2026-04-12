@@ -42,6 +42,7 @@ jobs:
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances \
             --filters "Name=tag:Project,Values=QuickProxy" \
+                      "Name=instance-state-name,Values=pending,running,stopping,stopped" \
             --query "Reservations[0].Instances[0].InstanceId" \
             --output text \
             --region ${{ inputs.region }})
