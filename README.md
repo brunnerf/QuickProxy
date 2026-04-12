@@ -65,6 +65,7 @@ docs/
 | Terraform | Manual (`action: destroy`) | validate → plan → approve → destroy |
 | Proxy | Manual | start / stop / status (single region) |
 | Proxy (all regions) | Manual | start / stop / status (all regions in parallel) |
+| Terraform (all regions) | Manual | apply all regional roots in parallel (optional instance replacement) |
 
 ## Prerequisites
 

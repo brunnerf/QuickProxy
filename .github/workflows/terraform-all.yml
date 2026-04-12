@@ -1,0 +1,71 @@
+name: Terraform (all regions)
+
+on:
+  workflow_dispatch:
+    inputs:
+      replace_instance:
+        description: "Force EC2 instance replacement in all regions"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  id-token: write   # required for OIDC token exchange
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  apply:
+    name: Apply (${{ matrix.region }})
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        region:
+          - eu-central-1
+          - eu-west-2
+          - us-east-1
+          - ap-southeast-1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ matrix.region }}
+
+      - name: Write backend config
+        run: |
+          cat > backend.hcl <<EOF
+          bucket  = "${{ secrets.STATE_BUCKET }}"
+          region  = "${{ secrets.STATE_BUCKET_REGION }}"
+          key     = "proxy/${{ matrix.region }}/terraform.tfstate"
+          encrypt = true
+          EOF
+
+      - name: Terraform init
+        run: terraform init -backend-config=../../backend.hcl -input=false
+        working-directory: terraform/${{ matrix.region }}
+
+      - name: Terraform apply
+        run: |
+          REPLACE_FLAG=""
+          if [ "${{ inputs.replace_instance }}" = "true" ]; then
+            REPLACE_FLAG="-replace=module.proxy.aws_instance.proxy"
+          fi
+          terraform apply -auto-approve -input=false $REPLACE_FLAG
+        working-directory: terraform/${{ matrix.region }}
+        env:
+          TF_VAR_additional_public_keys: ${{ secrets.ADDITIONAL_PUBLIC_KEYS }}
