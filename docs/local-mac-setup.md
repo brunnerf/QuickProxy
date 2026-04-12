@@ -103,12 +103,29 @@ This routes any SSH connection to an instance ID (`i-*`) through the SSM tunnel 
 Add this to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-export PROXY_INSTANCE_ID="i-0abc1234def567890"  # replace with your instance ID
-alias proxy-connect='ssh -D 1080 -N -f $PROXY_INSTANCE_ID'
-alias proxy-connect-lan='ssh -D 0.0.0.0:1080 -N -f $PROXY_INSTANCE_ID'
+# Looks up the running QuickProxy instance in a given region
+_proxy_instance() {
+  aws ec2 describe-instances \
+    --filters "Name=tag:Project,Values=QuickProxy" \
+               "Name=instance-state-name,Values=running" \
+    --query "Reservations[0].Instances[0].InstanceId" \
+    --output text \
+    --region "$1" \
+    --profile quickproxy-client
+}
+
+# Per-region aliases — AWS_DEFAULT_REGION is picked up by the SSH ProxyCommand
+alias proxy-de='AWS_DEFAULT_REGION=eu-central-1 ssh -D 1080 -N -f "$(_proxy_instance eu-central-1)"'
+alias proxy-uk='AWS_DEFAULT_REGION=eu-west-2     ssh -D 1080 -N -f "$(_proxy_instance eu-west-2)"'
+alias proxy-us='AWS_DEFAULT_REGION=us-east-1     ssh -D 1080 -N -f "$(_proxy_instance us-east-1)"'
+
+# LAN variants — expose the proxy to other devices on the same network
+alias proxy-de-lan='AWS_DEFAULT_REGION=eu-central-1 ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-central-1)"'
+alias proxy-uk-lan='AWS_DEFAULT_REGION=eu-west-2     ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-west-2)"'
+alias proxy-us-lan='AWS_DEFAULT_REGION=us-east-1     ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance us-east-1)"'
 ```
 
-`proxy-connect` binds to `localhost:1080` only. Use `proxy-connect-lan` to also expose the proxy to other devices on the same network — point them at `<this-machine-ip>:1080` as their SOCKS5 proxy.
+`AWS_DEFAULT_REGION` is set before SSH runs, so the SSH `ProxyCommand` picks it up automatically — no changes to `~/.ssh/config` needed. The `-lan` variants expose the tunnel on all interfaces so other devices on your network can use it at `<this-machine-ip>:1080`.
 
 Reload your shell:
 ```bash
@@ -116,9 +133,9 @@ source ~/.zshrc
 ```
 
 To start the proxy:
-1. Start the EC2 instance: **Actions → Proxy → Run workflow** → `start`
+1. Start the instance for the region you want: **Actions → Proxy → Run workflow** → select region → `start`
 2. Wait ~30 seconds
-3. Run `proxy-connect` or `proxy-connect-lan` — the command returns immediately, tunnel runs in the background on port `1080`
+3. Run the matching alias (e.g. `proxy-uk`) — the command returns immediately, tunnel runs in the background on port `1080`
 
 ---
 

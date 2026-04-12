@@ -33,24 +33,27 @@ Mac → AWS SSM tunnel → EC2 instance → internet
 
 ```
 .github/workflows/
-  terraform.yml     # validate, plan, apply, destroy
-  proxy.yml         # start, stop, status
+  terraform.yml          # validate (all roots), plan/apply/destroy (by region)
+  proxy.yml              # start, stop, status (by region)
 terraform/
-  main.tf           # provider and backend config
-  variables.tf      # input variables
-  outputs.tf        # instance ID, public IP, role ARN
-  network.tf        # VPC, subnet, IGW, route table, security group
-  ec2.tf            # EC2 instance with SSM and multi-key SSH support
-  iam.tf            # GitHub OIDC role, client role + base user, EC2 instance profile
-  templates/
-    user-data.sh.tpl  # SSH key injection at instance launch
+  global/                # IAM only — applied once; shared across all regions
+    iam.tf               # GitHub OIDC role, client role + base user, EC2 instance profile
+  modules/
+    proxy/               # reusable regional module
+      network.tf         # VPC, subnet, IGW, route table, security group
+      ec2.tf             # EC2 instance with SSM and multi-key SSH support
+      templates/
+        user-data.sh.tpl # SSH key injection at instance launch
+  eu-central-1/          # Frankfurt
+  eu-west-2/             # London
+  us-east-1/             # Virginia
 scripts/
-  bootstrap.sh      # one-time AWS account setup
+  bootstrap.sh           # one-time AWS account setup
 docs/
-  runbook.md        # first-time setup and account rotation guide
-  ssh-key-setup.md  # SSH key generation and multi-machine support
-  local-mac-setup.md # Mac prerequisites, SSH config, SOCKS proxy
-  ip-discovery.md   # finding the instance IP
+  runbook.md             # first-time setup and account rotation guide
+  ssh-key-setup.md       # SSH key generation and multi-machine support
+  local-mac-setup.md     # Mac prerequisites, AWS profiles, SSH config, SOCKS proxy
+  ip-discovery.md        # finding the instance IP
 ```
 
 ## Pipeline

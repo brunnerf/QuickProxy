@@ -13,8 +13,9 @@ terraform {
   }
 }
 
+# IAM is a global service; eu-west-1 is used only because the state bucket lives there
 provider "aws" {
-  region = var.aws_region
+  region = "eu-west-1"
 }
 
 locals {

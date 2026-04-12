@@ -92,42 +92,49 @@ Add these secrets:
 |---|---|---|
 | `ROLE_ARN` | `arn:aws:iam::<account-id>:role/github-oidc-role` | Bootstrap script output |
 | `STATE_BUCKET` | `terraform-state-<account-id>` | Bootstrap script output |
-| `AWS_REGION` | e.g. `eu-west-1` | Bootstrap script output |
+| `STATE_BUCKET_REGION` | `eu-west-1` | Region where the S3 state bucket was created |
+| `GITHUB_REPO` | `brunnerf/QuickProxy` | Your GitHub repository in owner/repo format |
 | `ADDITIONAL_PUBLIC_KEYS` | `["ssh-ed25519 AAAA... quickproxy-mac"]` | Output of `cat ~/.ssh/quickproxy_key.pub` wrapped in `["..."]` |
-
-`INSTANCE_ID` is not available yet — add it after Step 5.
 
 ---
 
 ## Step 4 — Initialize Terraform locally (one time only)
 
+Run `terraform init` in each root to generate lock files. From the repo root:
+
 ```bash
-cd terraform
-terraform init -backend-config=../backend.hcl -input=false
+for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1; do
+  terraform -chdir=$dir init -backend=false -input=false
+done
 ```
 
-Commit the generated lock file:
+Commit the generated lock files:
 ```bash
-git add .terraform.lock.hcl
-git commit -m "chore: add terraform lock file for new account"
+git add terraform/global/.terraform.lock.hcl \
+        terraform/eu-central-1/.terraform.lock.hcl \
+        terraform/eu-west-2/.terraform.lock.hcl \
+        terraform/us-east-1/.terraform.lock.hcl
+git commit -m "chore: add terraform lock files for all roots"
 git push
 ```
 
 ---
 
-## Step 5 — Run first terraform apply via pipeline
+## Step 5 — Apply global IAM first, then each region
 
+IAM resources must exist before EC2 instances can be created (the module looks up the instance profile by name).
+
+**5a — Apply global:**
 In GitHub: **Actions → Terraform → Run workflow**
+- region: `global`
 - action: `apply`
-- replace_instance: `false`
 
-The pipeline runs validate → plan → waits for your approval → apply.
+**5b — Apply each region** (repeat for eu-central-1, eu-west-2, us-east-1):
+In GitHub: **Actions → Terraform → Run workflow**
+- region: `eu-central-1` (then eu-west-2, then us-east-1)
+- action: `apply`
 
-After apply completes, get the instance ID from the pipeline output (`instance_id` output). Add it as a GitHub secret:
-
-| Secret | Value |
-|---|---|
-| `INSTANCE_ID` | `i-0abc1234...` |
+Instance IDs are no longer stored as GitHub secrets — the proxy workflow looks them up dynamically by tag at runtime.
 
 ---
 

@@ -3,6 +3,14 @@ name: Proxy
 on:
   workflow_dispatch:
     inputs:
+      region:
+        description: "Region to target"
+        required: true
+        type: choice
+        options:
+          - eu-central-1
+          - eu-west-2
+          - us-east-1
       action:
         description: "Action to perform"
         required: true
@@ -18,7 +26,7 @@ permissions:
 
 jobs:
   proxy:
-    name: ${{ github.event.inputs.action }}
+    name: ${{ github.event.inputs.action }} (${{ github.event.inputs.region }})
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -26,32 +34,49 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Resolve instance ID
+        id: instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Project,Values=QuickProxy" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text \
+            --region ${{ inputs.region }})
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "No QuickProxy instance found in ${{ inputs.region }}. Has Terraform been applied for this region?"
+            exit 1
+          fi
+          echo "id=${INSTANCE_ID}" >> $GITHUB_OUTPUT
 
       - name: Start proxy
-        if: github.event.inputs.action == 'start'
+        if: inputs.action == 'start'
         run: |
-          aws ec2 start-instances --instance-ids ${{ secrets.INSTANCE_ID }}
-          echo "Proxy instance starting. Run 'status' to check when it's ready."
+          aws ec2 start-instances --instance-ids ${{ steps.instance.outputs.id }} --region ${{ inputs.region }}
+          echo "Proxy instance starting in ${{ inputs.region }}. Run 'status' to check when it's ready."
 
       - name: Stop proxy
-        if: github.event.inputs.action == 'stop'
+        if: inputs.action == 'stop'
         run: |
-          aws ec2 stop-instances --instance-ids ${{ secrets.INSTANCE_ID }}
-          echo "Proxy instance stopping."
+          aws ec2 stop-instances --instance-ids ${{ steps.instance.outputs.id }} --region ${{ inputs.region }}
+          echo "Proxy instance stopping in ${{ inputs.region }}."
 
       - name: Status
-        if: github.event.inputs.action == 'status'
+        if: inputs.action == 'status'
         run: |
           STATE=$(aws ec2 describe-instances \
-            --instance-ids ${{ secrets.INSTANCE_ID }} \
+            --instance-ids ${{ steps.instance.outputs.id }} \
             --query 'Reservations[0].Instances[0].State.Name' \
-            --output text)
+            --output text \
+            --region ${{ inputs.region }})
 
           IP=$(aws ec2 describe-instances \
-            --instance-ids ${{ secrets.INSTANCE_ID }} \
+            --instance-ids ${{ steps.instance.outputs.id }} \
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
-            --output text)
+            --output text \
+            --region ${{ inputs.region }})
 
-          echo "State: ${STATE}"
-          echo "IP:    $([[ "${IP}" == "None" || -z "${IP}" ]] && echo "N/A" || echo "${IP}")"
+          echo "Region: ${{ inputs.region }}"
+          echo "State:  ${STATE}"
+          echo "IP:     $([[ "${IP}" == "None" || -z "${IP}" ]] && echo "N/A" || echo "${IP}")"

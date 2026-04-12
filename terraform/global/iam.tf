@@ -81,6 +81,7 @@ resource "aws_iam_role_policy" "github_s3_state" {
 
 # ---------------------------------------------------------------------------
 # Client role — assumed by proxy users for SSM tunnel + SSH; no infra access
+# Permissions use region wildcards so one role covers all three regions.
 # ---------------------------------------------------------------------------
 
 data "aws_iam_policy_document" "client_assume" {
@@ -103,13 +104,14 @@ resource "aws_iam_role" "client" {
 
 data "aws_iam_policy_document" "client_permissions" {
   # checkov:skip=CKV_AWS_356: ssm:Describe* and ec2:DescribeInstances do not support resource-level restrictions — "*" is required by AWS
-  # Start SSM sessions only on instances tagged Project=QuickProxy
+
+  # Start SSM sessions only on instances tagged Project=QuickProxy (any region)
   statement {
     sid     = "SSMStartSessionInstance"
     effect  = "Allow"
     actions = ["ssm:StartSession"]
     resources = [
-      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*",
+      "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:instance/*",
     ]
     condition {
       test     = "StringEquals"
@@ -124,11 +126,11 @@ data "aws_iam_policy_document" "client_permissions" {
     effect  = "Allow"
     actions = ["ssm:StartSession"]
     resources = [
-      "arn:aws:ssm:${var.aws_region}::document/AWS-StartSSHSession",
+      "arn:aws:ssm:*::document/AWS-StartSSHSession",
     ]
   }
 
-  # Manage own SSM sessions
+  # Manage own SSM sessions (any region)
   statement {
     sid    = "SSMManageSessions"
     effect = "Allow"
@@ -137,7 +139,7 @@ data "aws_iam_policy_document" "client_permissions" {
       "ssm:ResumeSession",
     ]
     resources = [
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:session/*",
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:session/*",
     ]
   }
 
@@ -153,7 +155,7 @@ data "aws_iam_policy_document" "client_permissions" {
     resources = ["*"]
   }
 
-  # Resolve instance ID by tag (e.g. in shell scripts)
+  # Resolve instance ID by tag across all regions
   statement {
     sid       = "EC2Describe"
     effect    = "Allow"
@@ -200,7 +202,7 @@ resource "aws_iam_user_policy" "base_assume_client" {
 }
 
 # ---------------------------------------------------------------------------
-# EC2 instance role — assumed by the EC2 instance for SSM access
+# EC2 instance role — assumed by EC2 instances in all regions for SSM access
 # ---------------------------------------------------------------------------
 
 data "aws_iam_policy_document" "ec2_assume" {

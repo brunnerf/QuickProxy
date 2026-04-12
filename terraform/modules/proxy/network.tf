@@ -11,7 +11,7 @@ resource "aws_vpc" "proxy" {
 resource "aws_subnet" "proxy_public" {
   vpc_id            = aws_vpc.proxy.id
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, 0)
-  availability_zone = "${var.aws_region}a"
+  availability_zone = "${local.aws_region}a"
 
   tags = merge(local.common_tags, { Name = "proxy-subnet" })
 }

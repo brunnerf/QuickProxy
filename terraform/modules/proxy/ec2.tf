@@ -23,7 +23,7 @@ resource "aws_instance" "proxy" {
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.proxy_public.id
   vpc_security_group_ids      = [aws_security_group.proxy_sg.id]
-  iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name
+  iam_instance_profile        = data.aws_iam_instance_profile.ec2_ssm.name
   associate_public_ip_address = true
 
   metadata_options {
