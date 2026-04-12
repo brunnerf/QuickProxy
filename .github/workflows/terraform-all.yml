@@ -1,3 +1,8 @@
+# Convenience wrapper around the single-region Terraform workflow's apply action.
+# Runs apply across all four regional roots in parallel — equivalent to triggering
+# Terraform → apply four times, once per region. Global is intentionally excluded
+# (IAM is not region-specific; use the Terraform workflow with region: global).
+# Destroy is intentionally excluded — use the Terraform workflow per region.
 name: Terraform (all regions)
 
 on:
