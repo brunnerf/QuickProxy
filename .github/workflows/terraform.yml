@@ -168,6 +168,18 @@ jobs:
         run: terraform init -backend-config=../../backend.hcl -input=false
         working-directory: terraform/${{ inputs.region }}
 
+      - name: Import bootstrap-created resources (global only)
+        if: inputs.region == 'global'
+        working-directory: terraform/global
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          terraform import aws_iam_openid_connect_provider.github \
+            "arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com" 2>/dev/null || true
+          terraform import aws_iam_role.github_oidc github-oidc-role 2>/dev/null || true
+        env:
+          TF_VAR_github_repo: ${{ secrets.QUICKPROXY_GITHUB_REPO }}
+          TF_VAR_additional_public_keys: ${{ secrets.ADDITIONAL_PUBLIC_KEYS }}
+
       - name: Terraform apply
         run: |
           REPLACE_FLAG=""
