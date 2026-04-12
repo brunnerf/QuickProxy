@@ -104,6 +104,7 @@ Add this to `~/.zshrc` or `~/.bashrc`:
 # Looks up the running QuickProxy instance in a given region
 _proxy_instance() {
   aws ec2 describe-instances \
+    --no-cli-pager \
     --filters "Name=tag:Project,Values=QuickProxy" \
                "Name=instance-state-name,Values=running" \
     --query "Reservations[0].Instances[0].InstanceId" \
