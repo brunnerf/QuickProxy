@@ -105,7 +105,7 @@ data "aws_iam_policy_document" "client_permissions" {
   # checkov:skip=CKV_AWS_356: ssm:Describe* and ec2:DescribeInstances do not support resource-level restrictions — "*" is required by AWS
   # Start SSM sessions only on instances tagged Project=QuickProxy
   statement {
-    sid     = "SSMStartSession"
+    sid     = "SSMStartSessionInstance"
     effect  = "Allow"
     actions = ["ssm:StartSession"]
     resources = [
@@ -116,6 +116,16 @@ data "aws_iam_policy_document" "client_permissions" {
       variable = "ssm:resourceTag/Project"
       values   = ["QuickProxy"]
     }
+  }
+
+  # Allow use of the SSH session document (AWS-owned — empty account ID, no tags)
+  statement {
+    sid     = "SSMStartSessionDocument"
+    effect  = "Allow"
+    actions = ["ssm:StartSession"]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}::document/AWS-StartSSHSession",
+    ]
   }
 
   # Manage own SSM sessions
