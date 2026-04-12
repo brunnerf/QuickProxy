@@ -114,14 +114,16 @@ _proxy_instance() {
 }
 
 # Per-region aliases — AWS_DEFAULT_REGION is picked up by the SSH ProxyCommand
-alias proxy-de='AWS_DEFAULT_REGION=eu-central-1 ssh -D 1080 -N -f "$(_proxy_instance eu-central-1)"'
-alias proxy-uk='AWS_DEFAULT_REGION=eu-west-2     ssh -D 1080 -N -f "$(_proxy_instance eu-west-2)"'
-alias proxy-us='AWS_DEFAULT_REGION=us-east-1     ssh -D 1080 -N -f "$(_proxy_instance us-east-1)"'
+alias proxy-de='AWS_DEFAULT_REGION=eu-central-1  ssh -D 1080 -N -f "$(_proxy_instance eu-central-1)"'
+alias proxy-uk='AWS_DEFAULT_REGION=eu-west-2      ssh -D 1080 -N -f "$(_proxy_instance eu-west-2)"'
+alias proxy-us='AWS_DEFAULT_REGION=us-east-1      ssh -D 1080 -N -f "$(_proxy_instance us-east-1)"'
+alias proxy-sg='AWS_DEFAULT_REGION=ap-southeast-1 ssh -D 1080 -N -f "$(_proxy_instance ap-southeast-1)"'
 
 # LAN variants — expose the proxy to other devices on the same network
-alias proxy-de-lan='AWS_DEFAULT_REGION=eu-central-1 ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-central-1)"'
-alias proxy-uk-lan='AWS_DEFAULT_REGION=eu-west-2     ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-west-2)"'
-alias proxy-us-lan='AWS_DEFAULT_REGION=us-east-1     ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance us-east-1)"'
+alias proxy-de-lan='AWS_DEFAULT_REGION=eu-central-1  ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-central-1)"'
+alias proxy-uk-lan='AWS_DEFAULT_REGION=eu-west-2      ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance eu-west-2)"'
+alias proxy-us-lan='AWS_DEFAULT_REGION=us-east-1      ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance us-east-1)"'
+alias proxy-sg-lan='AWS_DEFAULT_REGION=ap-southeast-1 ssh -D 0.0.0.0:1080 -N -f "$(_proxy_instance ap-southeast-1)"'
 ```
 
 `AWS_DEFAULT_REGION` is set before SSH runs, so the SSH `ProxyCommand` picks it up automatically — no changes to `~/.ssh/config` needed. The `-lan` variants expose the tunnel on all interfaces so other devices on your network can use it at `<this-machine-ip>:1080`.

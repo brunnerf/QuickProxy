@@ -22,6 +22,7 @@ on:
           - eu-central-1
           - eu-west-2
           - us-east-1
+          - ap-southeast-1
       action:
         description: "Terraform action to run"
         required: true
@@ -66,7 +67,7 @@ jobs:
 
       - name: Terraform init + validate (all roots)
         run: |
-          for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1; do
+          for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1 terraform/ap-southeast-1; do
             echo "=== $dir ==="
             terraform -chdir=$dir init -backend=false -input=false
             terraform -chdir=$dir validate
@@ -78,7 +79,7 @@ jobs:
 
       - name: tflint (all roots)
         run: |
-          for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1; do
+          for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1 terraform/ap-southeast-1; do
             echo "=== $dir ==="
             tflint --init --chdir=$dir
             tflint --chdir=$dir

@@ -47,6 +47,7 @@ terraform/
   eu-central-1/          # Frankfurt
   eu-west-2/             # London
   us-east-1/             # Virginia
+  ap-southeast-1/        # Singapore
 scripts/
   bootstrap.sh           # one-time AWS account setup
 docs/
