@@ -62,12 +62,10 @@ Add the role configuration to `~/.aws/config`:
 
 ```ini
 [profile quickproxy-base]
-region = eu-west-1
 
 [profile quickproxy-client]
 role_arn       = <client_role_arn>
 source_profile = quickproxy-base
-region         = eu-west-1
 ```
 
 Note: `~/.aws/credentials` uses `[quickproxy-base]` (no `profile` prefix); `~/.aws/config` uses `[profile quickproxy-base]`. The AWS CLI merges both files automatically.
