@@ -31,7 +31,8 @@ resource "aws_instance" "proxy" {
   }
 
   root_block_device {
-    volume_size = 8    # minimum for AL2023; a SOCKS proxy needs no extra storage
+    # 8 GB is the AL2023 minimum; a SOCKS proxy needs no extra storage
+    volume_size = 8
     volume_type = "gp3"
   }
 
