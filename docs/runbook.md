@@ -147,7 +147,7 @@ cd terraform
 terraform output client_role_arn
 ```
 
-Share both values with anyone who needs client access to the proxy. Each client machine configures its own `~/.aws/config` — see [docs/local-mac-setup.md](local-mac-setup.md#aws-profile-setup-proxy-client).
+Share both values with anyone who needs client access to the proxy. Each client machine stores the credentials in `~/.aws/credentials` and the role config in `~/.aws/config` — see [docs/local-mac-setup.md](local-mac-setup.md#aws-profile-setup).
 
 ---
 

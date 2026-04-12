@@ -50,19 +50,27 @@ Client machines authenticate via a dedicated IAM user (`quickproxy-base`) whose 
 
 You need the `AccessKeyId` and `SecretAccessKey` from the admin (created in the runbook at Step 6), and the `client_role_arn` from the Terraform output.
 
-Add these two profiles to `~/.aws/config`:
+Add the long-lived credentials to `~/.aws/credentials`:
+
+```ini
+[quickproxy-base]
+aws_access_key_id     = <AccessKeyId>
+aws_secret_access_key = <SecretAccessKey>
+```
+
+Add the role configuration to `~/.aws/config`:
 
 ```ini
 [profile quickproxy-base]
-aws_access_key_id     = <AccessKeyId>
-aws_secret_access_key = <SecretAccessKey>
-region                = eu-west-1
+region = eu-west-1
 
 [profile quickproxy-client]
 role_arn       = <client_role_arn>
 source_profile = quickproxy-base
 region         = eu-west-1
 ```
+
+Note: `~/.aws/credentials` uses `[quickproxy-base]` (no `profile` prefix); `~/.aws/config` uses `[profile quickproxy-base]`. The AWS CLI merges both files automatically.
 
 Verify the setup:
 
