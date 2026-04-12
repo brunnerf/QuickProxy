@@ -1,10 +1,10 @@
-data "aws_ami" "amazon_linux_2023" {
+data "aws_ami" "amazon_linux_2" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 
   filter {
@@ -19,7 +19,7 @@ resource "aws_instance" "proxy" {
   # checkov:skip=CKV_AWS_88: Public IP required — this instance IS the SOCKS proxy exit point
   # checkov:skip=CKV_AWS_126: Detailed monitoring not enabled; free-tier project, cost outweighs benefit
   # checkov:skip=CKV_AWS_135: EBS optimisation not available on t3.micro
-  ami                         = data.aws_ami.amazon_linux_2023.id
+  ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.proxy_public.id
   vpc_security_group_ids      = [aws_security_group.proxy_sg.id]
@@ -31,7 +31,7 @@ resource "aws_instance" "proxy" {
   }
 
   root_block_device {
-    # 8 GB is the AL2023 minimum; a SOCKS proxy needs no extra storage
+    # 8 GB is sufficient for AL2; gp3 is cheaper than the gp2 AMI default
     volume_size = 8
     volume_type = "gp3"
   }
@@ -44,7 +44,7 @@ resource "aws_instance" "proxy" {
 
   lifecycle {
     ignore_changes = [
-      ami, # prevent replacement when AWS publishes a newer Amazon Linux 2023 AMI
+      ami, # prevent replacement when AWS publishes a newer Amazon Linux 2 AMI
     ]
   }
 }
