@@ -44,7 +44,8 @@ resource "aws_instance" "proxy" {
 
   lifecycle {
     ignore_changes = [
-      ami, # prevent replacement when AWS publishes a newer Amazon Linux 2 AMI
+      ami,                        # prevent replacement when AWS publishes a newer Amazon Linux 2 AMI
+      associate_public_ip_address, # AWS sets this to false when instance is stopped; ignore to prevent replacement on next apply
     ]
   }
 }
