@@ -102,6 +102,7 @@ resource "aws_iam_role" "client" {
 }
 
 data "aws_iam_policy_document" "client_permissions" {
+  # checkov:skip=CKV_AWS_356: ssm:Describe* and ec2:DescribeInstances do not support resource-level restrictions — "*" is required by AWS
   # Start SSM sessions only on instances tagged Project=QuickProxy
   statement {
     sid     = "SSMStartSession"
@@ -167,7 +168,7 @@ resource "aws_iam_role_policy" "client_permissions" {
 # ---------------------------------------------------------------------------
 
 resource "aws_iam_user" "base" {
-  # checkov:skip=CKV_AWS_40: inline policy intentional — this user only does sts:AssumeRole; attaching to a group adds no value here
+  # checkov:skip=CKV_AWS_273: SSO is not justified for a single-owner personal project; this user is a minimal service account
   name = "quickproxy-base"
   tags = merge(local.common_tags, { Name = "quickproxy-base" })
 }
@@ -182,6 +183,7 @@ data "aws_iam_policy_document" "base_assume_client" {
 }
 
 resource "aws_iam_user_policy" "base_assume_client" {
+  # checkov:skip=CKV_AWS_40: inline policy intentional — this user only does sts:AssumeRole; attaching to a group adds no value here
   name   = "assume-quickproxy-client-role"
   user   = aws_iam_user.base.name
   policy = data.aws_iam_policy_document.base_assume_client.json
