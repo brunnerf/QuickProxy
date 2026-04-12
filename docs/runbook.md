@@ -178,16 +178,9 @@ See [docs/local-mac-setup.md](local-mac-setup.md) for full instructions covering
 
 ## After instance replacement
 
-The EC2 instance is replaced whenever you trigger apply with `replace_instance: true` or run destroy followed by apply. A new instance gets a **new instance ID** — update these two places every time:
+The EC2 instance is replaced whenever you trigger apply with `replace_instance: true` or run destroy followed by apply. No manual updates are needed — the proxy workflow and local aliases both look up the instance ID dynamically by the `Project=QuickProxy` tag at runtime.
 
-1. **GitHub secret** — Settings → Environments → production → `INSTANCE_ID` → update to the new ID from the pipeline's Terraform output
-2. **Local shell config** — update `PROXY_INSTANCE_ID` in `~/.zshrc` and reload:
-   ```bash
-   export PROXY_INSTANCE_ID="i-0new1234..."
-   source ~/.zshrc
-   ```
-
-The SSH key also needs to be re-added to `authorized_keys` at launch — it is injected automatically via `user_data`, so as long as `ADDITIONAL_PUBLIC_KEYS` is set correctly in GitHub the new instance will have the right key from the start.
+The SSH key is injected automatically via `user_data`, so as long as `ADDITIONAL_PUBLIC_KEYS` is set correctly in GitHub the new instance will have the right key from the start.
 
 ---
 
