@@ -105,13 +105,14 @@ The pipeline initialises Terraform itself on every run, so **this step is not re
 From the repo root:
 
 ```bash
-for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1; do
+for dir in terraform/global terraform/eu-central-1 terraform/eu-west-2 terraform/us-east-1 terraform/ap-southeast-1; do
   terraform -chdir=$dir init -backend=false -input=false
 done
 git add terraform/global/.terraform.lock.hcl \
         terraform/eu-central-1/.terraform.lock.hcl \
         terraform/eu-west-2/.terraform.lock.hcl \
-        terraform/us-east-1/.terraform.lock.hcl
+        terraform/us-east-1/.terraform.lock.hcl \
+        terraform/ap-southeast-1/.terraform.lock.hcl
 git commit -m "chore: add terraform lock files for all roots"
 git push
 ```
