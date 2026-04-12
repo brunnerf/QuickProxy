@@ -1,0 +1,83 @@
+name: Proxy (all regions)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform across all regions"
+        required: true
+        type: choice
+        options:
+          - status
+          - stop
+          - start
+
+permissions:
+  id-token: write   # required for OIDC token exchange
+  contents: read
+
+jobs:
+  proxy:
+    name: ${{ github.event.inputs.action }} (${{ matrix.region }})
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false   # run all regions even if one fails
+      matrix:
+        region:
+          - eu-central-1
+          - eu-west-2
+          - us-east-1
+          - ap-southeast-1
+
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ matrix.region }}
+
+      - name: Resolve instance ID
+        id: instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Project,Values=QuickProxy" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text \
+            --region ${{ matrix.region }})
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "No QuickProxy instance found in ${{ matrix.region }}. Has Terraform been applied for this region?"
+            exit 1
+          fi
+          echo "id=${INSTANCE_ID}" >> $GITHUB_OUTPUT
+
+      - name: Start proxy
+        if: inputs.action == 'start'
+        run: |
+          aws ec2 start-instances --instance-ids ${{ steps.instance.outputs.id }} --region ${{ matrix.region }}
+          echo "Proxy instance starting in ${{ matrix.region }}."
+
+      - name: Stop proxy
+        if: inputs.action == 'stop'
+        run: |
+          aws ec2 stop-instances --instance-ids ${{ steps.instance.outputs.id }} --region ${{ matrix.region }}
+          echo "Proxy instance stopping in ${{ matrix.region }}."
+
+      - name: Status
+        if: inputs.action == 'status'
+        run: |
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids ${{ steps.instance.outputs.id }} \
+            --query 'Reservations[0].Instances[0].State.Name' \
+            --output text \
+            --region ${{ matrix.region }})
+
+          IP=$(aws ec2 describe-instances \
+            --instance-ids ${{ steps.instance.outputs.id }} \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text \
+            --region ${{ matrix.region }})
+
+          echo "Region: ${{ matrix.region }}"
+          echo "State:  ${STATE}"
+          echo "IP:     $([[ "${IP}" == "None" || -z "${IP}" ]] && echo "N/A" || echo "${IP}")"
